@@ -35,14 +35,14 @@
 #define IO_LED_PIN 2
 
 #define SERIAL_PIN_TX 23
-#define SERIAL_PIN_RX 17
+#define SERIAL_PIN_RX 14
 #define SERIAL_SPEED 115200 // 115200 or 38400
 
 #define SCK 5 // GPIO5 - SX1278's SCK
 #define MISO 19 // GPIO19 - SX1278's MISO
 #define MOSI 27 // GPIO27 - SX1278's MOSI
 #define SS 18 // GPIO18 - SX1278's CS
-#define RST 14 // GPIO14 - SX1278's RESET
+#define RST 23 // GPIO23 - SX1278's RESET
 #define DI0 26 // GPIO26 - SX1278's IRQ (interrupt request)
 
 // -------- PHASES

@@ -30,7 +30,7 @@ char host_name[3][5]={"NoFC", "GCS", "INAV"};
 char host_state[2][5]={"", "ARM"};
 char peer_slotname[9][3]={"X", "A", "B", "C", "D", "E", "F", "G", "H"};
 
-SSD1306 display(0x3c, 4, 15);
+SSD1306 display(0x3c, 21, 22);
 
 BluetoothSerial SerialBT;
 
@@ -656,6 +656,7 @@ void IRAM_ATTR handleInterrupt() {
 // ----------------------------- setup
 
 void setup() {
+	Serial.begin(115200);
 
     sys.phase = MODE_START;
 
