@@ -82,7 +82,7 @@ int count_peers(bool active = 0) {
     int j = 0;
     for (int i = 0; i < cfg.lora_nodes_max; i++) {
         if (active == 1) {
-            if ((peers[i].id > 0) && !peers[i].lost) {
+            if ((peers[i].id > 0) && peers[i].lost == 0) {
                 j++;
             }
         }
@@ -231,6 +231,7 @@ void lora_receive(int packetSize) {
     sys.air_last_received_id = air_0.id;
     peers[id].id = sys.air_last_received_id;
     peers[id].lq_tick++;
+    peers[id].state = 0;
     peers[id].lost = 0;
     peers[id].updated = sys.lora_last_rx;
     peers[id].rssi = sys.last_rssi;
@@ -379,7 +380,7 @@ void display_draw() {
         display.drawHorizontalLine(0, 11, 128);
 
         for (int i = 0; i < cfg.lora_nodes_max ; i++) {
-            if (peers[i].id > 0 && !peers[i].lost) {
+            if (peers[i].id > 0 && peers[i].lost == 0) {
                 diff = sys.lora_last_tx - peers[i].updated;
                 if (diff > 0 && diff < sys.lora_cycle) {
                     pos[i] = 128 - round(128 * diff / sys.lora_cycle);
@@ -408,7 +409,10 @@ void display_draw() {
                 display.drawString (12, line, String(peers[i].name));
                 display.setTextAlignment (TEXT_ALIGN_RIGHT);
 
-                if (peers[i].lost) { // Peer timed out
+                if (peers[i].lost == 1) { // Peer timed out, short
+                    display.drawString (127, line, "x:" + String((int)((sys.lora_last_tx - peers[i].updated) / 1000)) + "s" );
+                }
+                else if (peers[i].lost == 2) { // Peer timed out, long
                     display.drawString (127, line, "L:" + String((int)((sys.lora_last_tx - peers[i].updated) / 1000)) + "s" );
                 }
                 else {
@@ -477,7 +481,7 @@ void display_draw() {
 
         if (peers[i].id > 0 || iscurrent) {
 
-            if (peers[i].lost && !iscurrent) { display.drawString (19, 0, "LOST"); }
+            if (peers[i].lost > 0 && !iscurrent) { display.drawString (19, 0, "LOST"); }
                 else if (peers[i].lq == 0 && !iscurrent) { display.drawString (19, 0, "x"); }
                 else if (peers[i].lq == 1) { display.drawXbm(19, 2, 8, 8, icon_lq_1); }
                 else if (peers[i].lq == 2) { display.drawXbm(19, 2, 8, 8, icon_lq_2); }
@@ -489,7 +493,7 @@ void display_draw() {
                     display.drawString (19, 12, String(host_name[curr.host]));
                 }
                 else {
-                    if (!peers[i].lost) {
+                    if (peers[i].lost == 0) {
                         display.drawString (28, 0, String(peers[i].rssi) + "db");
                     }
                 }
@@ -573,7 +577,7 @@ void msp_get_state() {
 
 void msp_get_name() {
     msp.request(MSP_NAME, &curr.name, sizeof(curr.name));
-    curr.name[6] = '\0';
+    curr.name[7] = '\0';
 }
 
 void msp_get_gps() {
@@ -601,7 +605,7 @@ void msp_set_fc() {
 
 void msp_send_radar(uint8_t i) {
     radarPos.id = i;
-    radarPos.state = peers[i].state;
+    radarPos.state = (peers[i].lost == 2) ? 2 : peers[i].state;
     radarPos.lat = peers[i].gps_comp.lat; // x 10E7
     radarPos.lon = peers[i].gps_comp.lon; // x 10E7
     radarPos.alt = peers[i].gps_comp.alt * 100; // cm
@@ -736,39 +740,37 @@ void loop() {
             if (curr.name[0] == '\0') {
                 for (int i = 0; i < 3; i++) {
                 curr.name[i] = (char) random(65, 90);
-                curr.name[3] = 0;
+                }
+            curr.name[3] = 0;
+            } 
+            curr.gps.fixType = 0;
+            curr.gps.lat = 0;
+            curr.gps.lon = 0;
+            curr.gps.alt = 0;
+            curr.id = 0;
+
+            LoRa.sleep();
+            LoRa.receive();
+
+            if (cfg.display_enable) {
+                if (curr.host != HOST_NONE) {
+                    display.drawString (35, 18, String(host_name[curr.host]) + " " + String(curr.fcversion.versionMajor) + "."  + String(curr.fcversion.versionMinor) + "." + String(curr.fcversion.versionPatchLevel));
+                    display.drawString (0, 27, "SERIAL SPD "+ String(SERIAL_SPEED));
+                } else {
+                    display.drawString (35, 18, String(host_name[curr.host]));
+                }
+                if (sys.io_bt_enabled) {
+                    display.drawString (105, 18, "+BT");
+                }
+                display.drawProgressBar(0, 51, 40, 8, 100);
+                display.drawString (0, 36, "SCAN");
+                display.display();
             }
-        }
 
-        curr.gps.fixType = 0;
-        curr.gps.lat = 0;
-        curr.gps.lon = 0;
-        curr.gps.alt = 0;
-        curr.id = 0;
+            sys.cycle_scan_begin = millis();
+            sys.phase = MODE_LORA_INIT;
 
-        LoRa.sleep();
-        LoRa.receive();
-
-        if (cfg.display_enable) {
-            if (curr.host != HOST_NONE) {
-                display.drawString (35, 18, String(host_name[curr.host]) + " " + String(curr.fcversion.versionMajor) + "."  + String(curr.fcversion.versionMinor) + "." + String(curr.fcversion.versionPatchLevel));
-                display.drawString (0, 27, "SERIAL SPD "+ String(SERIAL_SPEED));
-            } else {
-                display.drawString (35, 18, String(host_name[curr.host]));
-            }
-            if (sys.io_bt_enabled) {
-                display.drawString (105, 18, "+BT");
-            }
-            display.drawProgressBar(0, 51, 40, 8, 100);
-            display.drawString (0, 36, "SCAN");
-            display.display();
-        }
-
-        sys.cycle_scan_begin = millis();
-        sys.phase = MODE_LORA_INIT;
-
-        }
-        else { // Still scanning
+        } else { // Still scanning
             if (sys.now > sys.display_updated + DISPLAY_CYCLE / 2) {
                 delay(100);
                 msp_set_fc();
@@ -991,7 +993,7 @@ void loop() {
                 peers[i].lost = 1;
 
                 if ((sys.now - peers[i].updated) > LORA_PEER_TIMEOUT_LOST) { // Lost for a long time
-                    peers[i].state = 2;
+                    peers[i].lost = 2;
                 }
             }
         }

@@ -1,4 +1,4 @@
-This radar 2.1 version is modified for TTGO LoRa32 V2 modules (https://a.aliexpress.com/_mNl8BRy)
+This radar 2.2 version is modified for TTGO LoRa32 V2 modules (https://a.aliexpress.com/_mNl8BRy)
 
 Build and upload it using [PlatformIO](https://platformio.org/) plugin for [Atom](https://atom.io/) editor.
 

@@ -1,11 +1,11 @@
 // -------- GENERAL
 
-#define VERSION "2.1"
-#define VERSION_CONFIG 210
+#define VERSION "2.2"
+#define VERSION_CONFIG 220
 #define FORCE_DEFAULT_PROFILE 1
 #define CFG_PROFILE_DEFAULT_ID 1
-#define CFG_PROFILE_DEFAULT_NAME "433MHz 4 nodes"
-
+// This gets defined by PlatformIO environment (platformio.ini)
+// #define CFG_PROFILE_DEFAULT_NAME "433MHz 4 nodes"
 
 // -------- LORA DEFAULTS
 
@@ -14,7 +14,8 @@
 #define LORA_SPREADING_FACTOR 10 // 9
 #define LORA_POWER 20 
 
-#define LORA_FREQUENCY 433E6 // 433E6, 868E6, 915E6 ------
+// This gets defined by PlatformIO environment (platformio.ini)
+//#define LORA_FREQUENCY 433E6 // 433E6, 868E6, 915E6 ------
 #define LORA_NODES_MAX 4 // ------
 #define LORA_SLOT_SPACING 250
 
@@ -23,8 +24,8 @@
 
 #define LORA_NAME_LENGTH 3
 #define LORA_CYCLE_SCAN 3000 // 3000
-#define LORA_PEER_TIMEOUT 5000 // 5s
-#define LORA_PEER_TIMEOUT_LOST 20000  // 20s
+#define LORA_PEER_TIMEOUT 6000 // 6s
+#define LORA_PEER_TIMEOUT_LOST 120000  // 2 mins
 #define LORA_DRIFT_THRESHOLD 8 // Min for action
 #define LORA_DRIFT_CORRECTION 12 // Max to correct
 
@@ -68,7 +69,7 @@ struct peer_t {
    uint8_t id;
    uint8_t host;
    uint8_t state;
-   bool lost;
+   uint8_t lost;
    uint8_t broadcast;
    uint32_t updated;
    uint32_t lq_updated;
