@@ -660,7 +660,6 @@ void IRAM_ATTR handleInterrupt() {
 // ----------------------------- setup
 
 void setup() {
-	Serial.begin(115200);
 
     sys.phase = MODE_START;
 
